@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LifeSync — a student planner and expense tracker. Schedule classes, exams and personal time, and keep monthly spending on target in KRW or USD." />
+  <title>LifeSync - Student Planner & Financial Tracker</title>
+  <link rel="icon" type="image/png" href="/images/logo.png" />
+  <link rel="apple-touch-icon" href="/images/logo.png" />
+  <script>
+    // Apply saved theme before paint to avoid a flash
+    if (localStorage.getItem('lifesync_theme') === 'dark') document.documentElement.classList.add('dark');
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen transition-colors duration-200">
+
+  <!-- LOADING SPLASH (shown while the session is checked) -->
+  <div id="auth-loading" class="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
+    <img src="/images/logo.png" alt="" width="64" height="64" class="w-16 h-16 animate-pulse" />
+    <p id="auth-loading-error" class="hidden text-sm text-slate-500 dark:text-slate-400">LifeSync couldn't connect. Check your internet connection and refresh the page.</p>
+  </div>
+
+  <!-- LOGIN / SIGN UP SCREEN -->
+  <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-md">
+      <div class="flex flex-col items-center text-center mb-6">
+        <img src="/images/logo.png" alt="LifeSync logo" width="72" height="72" class="w-[72px] h-[72px] drop-shadow-lg mb-4" />
+        <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-600 dark:from-brand-400 dark:to-indigo-300 bg-clip-text text-transparent">LifeSync</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Log in to keep your schedule and expenses saved on every device.</p>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 p-6 sm:p-7 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <!-- Tabs -->
+        <div id="auth-tabs" class="flex items-center bg-slate-100 dark:bg-slate-700/80 p-1 rounded-xl border border-slate-200 dark:border-slate-600 mb-5">
+          <button type="button" id="auth-tab-login" data-mode="login" class="auth-tab flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition">Log in</button>
+          <button type="button" id="auth-tab-signup" data-mode="signup" class="auth-tab flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition">Sign up</button>
+        </div>
+
+        <h2 id="auth-heading" class="hidden text-base font-bold text-slate-800 dark:text-slate-100 mb-4"></h2>
+
+        <form id="auth-form" class="space-y-4" novalidate>
+          <div id="auth-name-field" class="hidden">
+            <label for="auth-name" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Name</label>
+            <input id="auth-name" type="text" autocomplete="name" placeholder="Your name" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <div id="auth-email-field">
+            <label for="auth-email" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Email</label>
+            <input id="auth-email" type="email" autocomplete="email" placeholder="you@university.edu" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <div id="auth-password-field">
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="auth-password" id="auth-password-label" class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Password</label>
+              <button type="button" id="auth-forgot-link" class="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline">Forgot password?</button>
+            </div>
+            <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+
+          <div id="auth-message" class="hidden text-sm rounded-xl px-3.5 py-2.5" role="status"></div>
+
+          <button type="submit" id="auth-submit" class="w-full py-2.5 text-sm font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-brand-500/20 transition disabled:opacity-60 disabled:cursor-wait">Log in</button>
+          <button type="button" id="auth-back-link" class="hidden w-full text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-brand-600">← Back to log in</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Container -->
+  <div id="app" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+      
+      <!-- Brand & Custom Logo -->
+      <div class="flex items-center space-x-3.5">
+        <img src="/images/logo.png" alt="LifeSync logo" width="44" height="44" class="w-11 h-11 shrink-0 drop-shadow-md" />
+        <div>
+          <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-600 dark:from-brand-400 dark:to-indigo-300 bg-clip-text text-transparent">
+            LifeSync
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Studies & Finances Harmonized</p>
+        </div>
+      </div>
+
+      <!-- Action Controls, Currency Selector & File Management -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        
+        <!-- CURRENCY SELECTOR TOGGLE (KRW ₩ / USD $) -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-700/80 p-1 rounded-xl border border-slate-200 dark:border-slate-600">
+          <button id="curr-btn-KRW" onclick="setCurrency('KRW')" class="px-2.5 py-1 text-xs font-bold rounded-lg transition bg-white dark:bg-slate-800 text-brand-600 shadow-sm">
+            ₩ KRW
+          </button>
+          <button id="curr-btn-USD" onclick="setCurrency('USD')" class="px-2.5 py-1 text-xs font-bold rounded-lg transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+            $ USD
+          </button>
+        </div>
+
+        <!-- Notification Toggle -->
+        <button id="btn-notify-toggle" onclick="toggleNotifications()" class="flex items-center space-x-1.5 px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+          <span id="notify-icon">🔔</span>
+          <span id="notify-label">Reminders</span>
+        </button>
+
+        <!-- Save / Load Computer Files (JSON Export/Import) -->
+        <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-700/60 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
+          <button onclick="exportDataToComputer()" title="Save backup file to computer" class="flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-sm hover:text-brand-600 transition">
+            <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            <span>Export</span>
+          </button>
+          
+          <label class="flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-sm hover:text-brand-600 cursor-pointer transition">
+            <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span>Import</span>
+            <input type="file" id="import-file-input" accept=".json" onchange="importDataFromComputer(event)" class="hidden" />
+          </label>
+        </div>
+
+        <!-- Quick Reset Demo Data -->
+        <button onclick="loadDemoData()" class="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition" title="Reload Demo Data">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleDarkMode()" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition" title="Toggle Light/Dark Theme">
+          <span class="dark:hidden">🌙</span>
+          <span class="hidden dark:inline">☀️</span>
+        </button>
+
+        <!-- Signed-in User & Log Out -->
+        <div class="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-700">
+          <div class="hidden sm:flex w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-200 items-center justify-center text-xs font-bold" id="user-avatar" aria-hidden="true"></div>
+          <span id="user-label" class="text-xs font-medium text-slate-600 dark:text-slate-300 max-w-[10rem] truncate"></span>
+          <button id="btn-logout" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION ALERT BANNER (If Reminders Due) -->
+    <div id="reminder-toast" class="hidden bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/60 p-4 rounded-2xl flex items-center justify-between transition-all">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-amber-500 text-white rounded-xl shadow-sm text-sm">⏰</div>
+        <div>
+          <h4 id="reminder-toast-title" class="text-sm font-bold text-amber-900 dark:text-amber-200">Upcoming Items Due Soon!</h4>
+          <p id="reminder-toast-desc" class="text-xs text-amber-700 dark:text-amber-300">You have events or expense obligations due today or tomorrow.</p>
+        </div>
+      </div>
+      <button onclick="dismissReminderToast()" class="text-amber-500 hover:text-amber-700 dark:hover:text-amber-200 text-xs font-semibold px-2 py-1">Dismiss</button>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT COLUMN: ADD EVENT FORM & EXPENSE BREAKDOWN (4 COLUMNS) -->
+      <div class="lg:col-span-4 space-y-6">
+
+        <!-- ADD ITEM / EVENT FORM CARD -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span class="w-2 h-4 bg-brand-600 rounded-full inline-block"></span>
+              Add Schedule or Expense
+            </h2>
+            <span class="text-xs font-medium text-slate-400">Syncs Automatically</span>
+          </div>
+
+          <form id="entry-form" onsubmit="handleFormSubmit(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Title / Description</label>
+              <input type="text" id="input-title" required placeholder="e.g. Midterm or Dorm Rent" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 transition" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Category</label>
+                <select id="input-category" onchange="toggleAmountField()" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option value="Academic">📚 Academic</option>
+                  <option value="Expense">💰 Expense</option>
+                  <option value="Personal">🧘 Personal</option>
+                  <option value="Exam">📝 Exam / Quiz</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Date</label>
+                <input type="date" id="input-date" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+            </div>
+
+            <!-- Conditional Amount Field for Expenses (Adapts to Active Currency) -->
+            <div id="amount-field-container" class="hidden">
+              <label id="input-amount-label" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Expense Amount (₩)</label>
+              <input type="number" id="input-amount" step="any" min="0" placeholder="e.g. 50000" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Priority</label>
+                <select id="input-priority" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option value="Normal">Normal</option>
+                  <option value="High">🔴 High Priority</option>
+                  <option value="Low">🟢 Low Priority</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Reminder</label>
+                <select id="input-reminder" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option value="none">None</option>
+                  <option value="same_day">On Due Date</option>
+                  <option value="1_day">1 Day Before</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-500/20 active:scale-[0.99] transition duration-150 flex items-center justify-center space-x-2">
+              <span>+ Add to LifeSync</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- FINANCIAL ALLOCATION BREAKDOWN CARD -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span class="w-2 h-4 bg-emerald-500 rounded-full inline-block"></span>
+              Expense Targets
+            </h2>
+            <span class="text-xs text-slate-400 font-medium" id="current-month-label">This Month</span>
+          </div>
+
+          <!-- Total Monthly Expenses & Target Allocation -->
+          <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-700 space-y-3 mb-4">
+            <div class="flex justify-between items-baseline">
+              <span class="text-xs text-slate-500 dark:text-slate-400">Total Month Expenses</span>
+              <span id="stat-total-expense" class="text-lg font-bold text-emerald-600 dark:text-emerald-400">₩0</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-700/80">
+              <div class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Weekly Target</span>
+                <span id="stat-weekly-target" class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">₩0 / wk</span>
+              </div>
+              <div class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Daily Allocation</span>
+                <span id="stat-daily-target" class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">₩0 / day</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini List of Recent Financial Items -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1">
+              <span>Expense Title</span>
+              <span>Amount</span>
+            </div>
+            <div id="expense-mini-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              <!-- Rendered via JavaScript -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: SEARCH, FILTERS, CALENDAR & TIMELINE VIEWS (8 COLUMNS) -->
+      <div class="lg:col-span-8 space-y-6">
+
+        <!-- SEARCH BAR & CATEGORY MULTI-FILTER BAR -->
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-3">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            
+            <!-- Search Field -->
+            <div class="relative w-full sm:w-72">
+              <input type="text" id="search-bar" oninput="applyFilters()" placeholder="Search items or expenses..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+
+            <!-- View Switcher Tabs (Calendar vs List View) -->
+            <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-auto justify-center">
+              <button id="view-tab-calendar" onclick="switchView('calendar')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-brand-600 shadow-sm transition">
+                📅 Calendar Grid
+              </button>
+              <button id="view-tab-list" onclick="switchView('list')" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition">
+                📋 List View
+              </button>
+            </div>
+          </div>
+
+          <!-- Multi-Filter Buttons -->
+          <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <span class="text-xs font-semibold text-slate-400 mr-1">Filter:</span>
+            <button onclick="setFilterCategory('All')" id="filter-btn-All" class="filter-chip px-2.5 py-1 text-xs font-medium rounded-lg bg-brand-600 text-white transition">All</button>
+            <button onclick="setFilterCategory('Academic')" id="filter-btn-Academic" class="filter-chip px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition">📚 Academic</button>
+            <button onclick="setFilterCategory('Expense')" id="filter-btn-Expense" class="filter-chip px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition">💰 Expenses</button>
+            <button onclick="setFilterCategory('Personal')" id="filter-btn-Personal" class="filter-chip px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition">🧘 Personal</button>
+            <button onclick="setFilterCategory('Exam')" id="filter-btn-Exam" class="filter-chip px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition">📝 Exams</button>
+          </div>
+        </div>
+
+        <!-- FULL INTERACTIVE MONTH CALENDAR VIEW -->
+        <div id="view-container-calendar" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <!-- Month Header Controls -->
+          <div class="flex items-center justify-between mb-4">
+            <h2 id="calendar-month-year" class="text-lg font-bold text-slate-800 dark:text-slate-100"></h2>
+            <div class="flex items-center space-x-2">
+              <button onclick="changeMonth(-1)" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
+                &lt;
+              </button>
+              <button onclick="resetToCurrentMonth()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Today</button>
+              <button onclick="changeMonth(1)" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
+                &gt;
+              </button>
+            </div>
+          </div>
+
+          <!-- Day Labels -->
+          <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+
+          <!-- Calendar Grid Cells -->
+          <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+        <!-- LIST / TIMELINE VIEW (Hidden by default, toggled via tab) -->
+        <div id="view-container-list" class="hidden bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">All Scheduled Items</h2>
+            <span id="item-count-badge" class="text-xs bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 px-2.5 py-0.5 rounded-full font-semibold">0 items</span>
+          </div>
+
+          <div id="list-container" class="space-y-2.5">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    // INITIAL APP STATE
+    let items = [];
+    let activeFilterCategory = 'All';
+    let activeView = 'calendar'; // 'calendar' or 'list'
+    let currentDisplayDate = new Date(); // Tracks currently viewed calendar month
+    let currentCurrency = 'KRW'; // 'KRW' or 'USD'
+    const USD_TO_KRW_RATE = 1350; // Conversion baseline rate: 1 USD = 1,350 KRW
+
+    // DEMO SEED DATA (Stored in base USD, formatted dynamically)
+    const demoItems = [
+      { id: '1', title: 'Physics Midterm Exam', category: 'Exam', date: getFormattedDate(1), amount: null, priority: 'High', reminder: '1_day' },
+      { id: '2', title: 'Textbook Purchase', category: 'Expense', date: getFormattedDate(0), amount: 85.00, priority: 'Normal', reminder: 'none' },
+      { id: '3', title: 'Monthly Dorm Rent', category: 'Expense', date: getFormattedDate(5), amount: 450.00, priority: 'High', reminder: '1_day' },
+      { id: '4', title: 'Computer Science Lab Project', category: 'Academic', date: getFormattedDate(3), amount: null, priority: 'High', reminder: 'same_day' },
+      { id: '5', title: 'Yoga & Wellbeing Session', category: 'Personal', date: getFormattedDate(2), amount: null, priority: 'Low', reminder: 'none' },
+      { id: '6', title: 'Campus Meal Plan Top-up', category: 'Expense', date: getFormattedDate(12), amount: 120.00, priority: 'Normal', reminder: 'none' }
+    ];
+
+    // INITIALIZATION ON LOAD (items load after login, see loadUserItems)
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set default input date to today
+      document.getElementById('input-date').value = getFormattedDate(0);
+      
+      // Load currency preference if saved
+      const savedCurr = localStorage.getItem('lifesync_currency');
+      if (savedCurr === 'USD' || savedCurr === 'KRW') {
+        currentCurrency = savedCurr;
+      }
+
+      if (window.Notification && Notification.permission === 'granted') {
+        document.getElementById('notify-label').innerText = 'Active';
+      }
+
+      updateCurrencyUI();
+      renderApp();
+
+      // If the login library never loads (offline, blocked CDN), say so instead of spinning forever
+      setTimeout(() => {
+        if (!window.LifeSyncAuth) document.getElementById('auth-loading-error').classList.remove('hidden');
+      }, 10000);
+    });
+
+    // ACCOUNT DATA: load the signed-in user's items from the server
+    async function loadUserItems() {
+      items = [];
+      renderApp();
+      try {
+        let saved = await itemsApi('GET');
+        // First login on this device: move any items saved in the browser into the account
+        const legacy = localStorage.getItem('lifesync_items');
+        if (legacy) {
+          if (saved.length === 0) {
+            try {
+              const legacyItems = JSON.parse(legacy);
+              if (Array.isArray(legacyItems) && legacyItems.length) saved = await itemsApi('PUT', legacyItems);
+            } catch (e) { /* unreadable legacy data is skipped */ }
+          }
+          localStorage.removeItem('lifesync_items');
+        }
+        items = saved;
+      } catch (err) {
+        if (err.status !== 401) alert("Couldn't load your saved items. Please refresh the page.");
+      }
+      renderApp();
+      checkReminders();
+    }
+
+    // Clear the dashboard when the user logs out
+    function clearUserItems() {
+      items = [];
+      renderApp();
+      dismissReminderToast();
+    }
+
+    // SERVER SYNC HELPER (/api/items, authenticated by the login cookie)
+    async function itemsApi(method, body, query = '') {
+      const send = () => fetch('/api/items' + query, {
+        method,
+        credentials: 'same-origin',
+        headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
+        body: body !== undefined ? JSON.stringify(body) : undefined
+      });
+      let res = await send();
+      if (res.status === 401 && window.LifeSyncAuth && await window.LifeSyncAuth.refresh()) res = await send();
+      if (res.status === 401 && window.LifeSyncAuth) window.LifeSyncAuth.sessionExpired();
+      if (!res.ok) {
+        const err = new Error(`Request failed (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+      return res.status === 204 ? null : res.json();
+    }
+
+    // Apply a change locally right away, then save it; reload from the server if saving fails
+    async function syncChange(request) {
+      try {
+        await request;
+      } catch (err) {
+        if (err.status !== 401) {
+          alert("Couldn't save your change. Your list has been reloaded from your account.");
+          loadUserItems();
+        }
+      }
+    }
+
+    // CURRENCY SWITCHER LOGIC
+    function setCurrency(curr) {
+      currentCurrency = curr;
+      localStorage.setItem('lifesync_currency', curr);
+      if (window.LifeSyncAuth) window.LifeSyncAuth.saveCurrency(curr);
+      updateCurrencyUI();
+      renderApp();
+    }
+
+    function updateCurrencyUI() {
+      const btnKRW = document.getElementById('curr-btn-KRW');
+      const btnUSD = document.getElementById('curr-btn-USD');
+      const amountLabel = document.getElementById('input-amount-label');
+      const amountInput = document.getElementById('input-amount');
+
+      if (currentCurrency === 'KRW') {
+        btnKRW.className = "px-2.5 py-1 text-xs font-bold rounded-lg transition bg-white dark:bg-slate-800 text-brand-600 shadow-sm";
+        btnUSD.className = "px-2.5 py-1 text-xs font-bold rounded-lg transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200";
+        if (amountLabel) amountLabel.innerText = "Expense Amount (₩)";
+        if (amountInput) amountInput.placeholder = "e.g. 50000";
+      } else {
+        btnUSD.className = "px-2.5 py-1 text-xs font-bold rounded-lg transition bg-white dark:bg-slate-800 text-brand-600 shadow-sm";
+        btnKRW.className = "px-2.5 py-1 text-xs font-bold rounded-lg transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200";
+        if (amountLabel) amountLabel.innerText = "Expense Amount ($)";
+        if (amountInput) amountInput.placeholder = "e.g. 45.00";
+      }
+    }
+
+    // HTML ESCAPE HELPER (titles are user-entered or imported)
+    function escapeHTML(str) {
+      return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // CURRENCY FORMATTER HELPER
+    function formatMoney(amountInUSD) {
+      if (amountInUSD === null || amountInUSD === undefined || isNaN(amountInUSD)) return '';
+      if (currentCurrency === 'KRW') {
+        const krwVal = Math.round(amountInUSD * USD_TO_KRW_RATE);
+        return `₩${krwVal.toLocaleString('ko-KR')}`;
+      } else {
+        return `$${amountInUSD.toFixed(2)}`;
+      }
+    }
+
+    // RENDER CONTROLLER
+    function renderApp() {
+      renderCalendar();
+      renderListView();
+      renderExpenseStats();
+    }
+
+    // UTILITY: Get YYYY-MM-DD string with offset days
+    function getFormattedDate(offsetDays = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // FORM HANDLER
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('input-title').value.trim();
+      const category = document.getElementById('input-category').value;
+      const date = document.getElementById('input-date').value;
+      const amountVal = document.getElementById('input-amount').value;
+      const priority = document.getElementById('input-priority').value;
+      const reminder = document.getElementById('input-reminder').value;
+
+      if (!title || !date) return;
+
+      let parsedAmountInUSD = null;
+      if (category === 'Expense' && amountVal !== '') {
+        const enteredNum = parseFloat(amountVal);
+        if (!isNaN(enteredNum)) {
+          // Convert KRW input to internal USD base storage if active
+          parsedAmountInUSD = currentCurrency === 'KRW' ? enteredNum / USD_TO_KRW_RATE : enteredNum;
+        }
+      }
+
+      const newItem = {
+        id: Date.now().toString(),
+        title,
+        category,
+        date,
+        amount: parsedAmountInUSD,
+        priority,
+        reminder
+      };
+
+      items.push(newItem);
+      renderApp();
+      syncChange(itemsApi('POST', newItem));
+      checkReminders();
+
+      // Reset form fields
+      document.getElementById('input-title').value = '';
+      document.getElementById('input-amount').value = '';
+    }
+
+    // TOGGLE AMOUNT FIELD IN FORM
+    function toggleAmountField() {
+      const cat = document.getElementById('input-category').value;
+      const amountContainer = document.getElementById('amount-field-container');
+      if (cat === 'Expense') {
+        amountContainer.classList.remove('hidden');
+      } else {
+        amountContainer.classList.add('hidden');
+      }
+    }
+
+    // DELETE ITEM
+    function deleteItem(id) {
+      items = items.filter(item => String(item.id) !== String(id));
+      renderApp();
+      syncChange(itemsApi('DELETE', undefined, `?id=${encodeURIComponent(id)}`));
+    }
+
+    // SAVE THE WHOLE LIST TO THE ACCOUNT (used by demo reset and import)
+    function saveAllItems() {
+      renderApp();
+      syncChange(itemsApi('PUT', items).then(saved => { items = saved; renderApp(); }));
+    }
+
+    // LOAD DEMO DATA
+    function loadDemoData() {
+      if (confirm("Reset to default demo data? Your current list will be overwritten.")) {
+        items = demoItems.map(i => ({ ...i }));
+        saveAllItems();
+      }
+    }
+
+    // DATA EXPORT TO COMPUTER (JSON Backup)
+    function exportDataToComputer() {
+      const exportObj = {
+        currency: currentCurrency,
+        items: items
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `LifeSync_Backup_${getFormattedDate(0)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // DATA IMPORT FROM COMPUTER
+    function importDataFromComputer(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            items = imported;
+          } else if (imported && Array.isArray(imported.items)) {
+            items = imported.items;
+            if (imported.currency === 'KRW' || imported.currency === 'USD') setCurrency(imported.currency);
+          } else {
+            alert("Invalid backup file format.");
+            return;
+          }
+          saveAllItems();
+          alert("Data successfully restored from backup file!");
+          event.target.value = '';
+        } catch (err) {
+          alert("Error reading JSON file. Make sure it's a valid LifeSync backup.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // CATEGORY FILTER CONTROLLER
+    function setFilterCategory(cat) {
+      activeFilterCategory = cat;
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white');
+        btn.classList.add('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+      });
+      const activeBtn = document.getElementById(`filter-btn-${cat}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-300');
+        activeBtn.classList.add('bg-brand-600', 'text-white');
+      }
+      renderApp();
+    }
+
+    function applyFilters() {
+      renderApp();
+    }
+
+    function getFilteredItems() {
+      const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+      return items.filter(item => {
+        const matchesCategory = activeFilterCategory === 'All' || item.category === activeFilterCategory;
+        const matchesSearch = String(item.title ?? '').toLowerCase().includes(searchTerm) || String(item.category ?? '').toLowerCase().includes(searchTerm);
+        return matchesCategory && matchesSearch;
+      });
+    }
+
+    // SWITCH VIEW TABS
+    function switchView(view) {
+      activeView = view;
+      const calContainer = document.getElementById('view-container-calendar');
+      const listContainer = document.getElementById('view-container-list');
+      const tabCal = document.getElementById('view-tab-calendar');
+      const tabList = document.getElementById('view-tab-list');
+
+      if (view === 'calendar') {
+        calContainer.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+        tabCal.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-brand-600 shadow-sm transition";
+        tabList.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition";
+      } else {
+        calContainer.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+        tabList.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-brand-600 shadow-sm transition";
+        tabCal.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 transition";
+      }
+    }
+
+    // MONTH CALENDAR GENERATOR
+    function changeMonth(delta) {
+      currentDisplayDate.setDate(1);
+      currentDisplayDate.setMonth(currentDisplayDate.getMonth() + delta);
+      renderApp();
+    }
+
+    function resetToCurrentMonth() {
+      currentDisplayDate = new Date();
+      renderApp();
+    }
+
+    function renderCalendar() {
+      const year = currentDisplayDate.getFullYear();
+      const month = currentDisplayDate.getMonth();
+
+      // Month name header
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('calendar-month-year').innerText = `${monthNames[month]} ${year}`;
+
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const todayStr = getFormattedDate(0);
+
+      const filteredItems = getFilteredItems();
+
+      // Blank padding cells for leading days
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = "min-h-[80px] p-1 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-100 dark:border-slate-800";
+        grid.appendChild(emptyCell);
+      }
+
+      // Populate day cells
+      for (let day = 1; day <= totalDays; day++) {
+        const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dayStr === todayStr;
+
+        const dayItems = filteredItems.filter(item => item.date === dayStr);
+
+        const cell = document.createElement('div');
+        cell.className = `min-h-[85px] sm:min-h-[95px] p-1.5 rounded-xl border transition flex flex-col justify-between ${
+          isToday 
+            ? 'bg-brand-50/40 dark:bg-brand-900/20 border-brand-300 dark:border-brand-700 font-bold' 
+            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-300'
+        }`;
+
+        let cellContent = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs ${isToday ? 'w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold' : 'text-slate-600 dark:text-slate-400'}">${day}</span>
+            ${dayItems.length > 0 ? `<span class="text-[10px] text-brand-600 font-semibold">${dayItems.length}</span>` : ''}
+          </div>
+          <div class="space-y-1 overflow-y-auto max-h-[60px] pr-0.5">
+        `;
+
+        dayItems.forEach(item => {
+          let badgeColor = "bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300";
+          if (item.category === 'Expense') badgeColor = "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300";
+          if (item.category === 'Exam') badgeColor = "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300";
+
+          cellContent += `
+            <div class="text-[10px] p-1 rounded-md ${badgeColor} truncate font-medium flex items-center justify-between" title="${escapeHTML(item.title)}">
+              <span class="truncate">${escapeHTML(item.title)}</span>
+              ${item.amount ? `<span class="font-bold ml-1">${formatMoney(item.amount)}</span>` : ''}
+            </div>
+          `;
+        });
+
+        cellContent += `</div>`;
+        cell.innerHTML = cellContent;
+        grid.appendChild(cell);
+      }
+    }
+
+    // RENDER LIST VIEW
+    function renderListView() {
+      const container = document.getElementById('list-container');
+      const filtered = getFilteredItems();
+      document.getElementById('item-count-badge').innerText = `${filtered.length} items`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <p class="text-sm">No scheduled items found.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      filtered.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = "p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between transition hover:border-slate-200";
+
+        let catBadge = "bg-brand-100 text-brand-700 dark:bg-brand-900/60 dark:text-brand-300";
+        if (item.category === 'Expense') catBadge = "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300";
+        if (item.category === 'Exam') catBadge = "bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300";
+
+        itemEl.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="px-2 py-1 text-[10px] font-bold rounded-lg ${catBadge}">${escapeHTML(item.category)}</span>
+            <div>
+              <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-100">${escapeHTML(item.title)}</h4>
+              <p class="text-xs text-slate-400">Due: ${escapeHTML(item.date)} ${item.priority === 'High' ? '<span class="text-rose-500 font-bold ml-1">• High Priority</span>' : ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3">
+            ${item.amount ? `<span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">${formatMoney(item.amount)}</span>` : ''}
+            <button data-id="${escapeHTML(item.id)}" onclick="deleteItem(this.dataset.id)" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        `;
+        container.appendChild(itemEl);
+      });
+    }
+
+    // EXPENSE STATS & ALLOCATION TARGETS
+    function renderExpenseStats() {
+      const monthPrefix = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}`;
+      const isCurrentMonth = monthPrefix === getFormattedDate(0).slice(0, 7);
+      document.getElementById('current-month-label').innerText = isCurrentMonth
+        ? 'This Month'
+        : currentDisplayDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      const expenses = items
+        .filter(i => i.category === 'Expense' && i.amount && String(i.date).startsWith(monthPrefix))
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const totalUSD = expenses.reduce((sum, item) => sum + item.amount, 0);
+
+      // Allocations
+      const weeklyUSD = totalUSD / 4.33;
+      const dailyUSD = totalUSD / 30;
+
+      document.getElementById('stat-total-expense').innerText = formatMoney(totalUSD);
+      document.getElementById('stat-weekly-target').innerText = `${formatMoney(weeklyUSD)} / wk`;
+      document.getElementById('stat-daily-target').innerText = `${formatMoney(dailyUSD)} / day`;
+
+      // Mini expense list render
+      const miniList = document.getElementById('expense-mini-list');
+      miniList.innerHTML = '';
+      if (expenses.length === 0) {
+        miniList.innerHTML = `<div class="text-xs text-slate-400 py-2">No expenses this month.</div>`;
+        return;
+      }
+
+      expenses.forEach(exp => {
+        const row = document.createElement('div');
+        row.className = "flex justify-between items-center text-xs py-1 border-b border-slate-100 dark:border-slate-800/60";
+        row.innerHTML = `
+          <span class="text-slate-700 dark:text-slate-300 truncate max-w-[140px]">${escapeHTML(exp.title)}</span>
+          <span class="font-bold text-slate-800 dark:text-slate-100">${formatMoney(exp.amount)}</span>
+        `;
+        miniList.appendChild(row);
+      });
+    }
+
+    // NOTIFICATIONS & REMINDERS SYSTEM
+    function toggleNotifications() {
+      if (!("Notification" in window)) {
+        alert("This browser does not support desktop notifications.");
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        alert("Notifications are already enabled for LifeSync!");
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            document.getElementById('notify-label').innerText = "Active";
+            document.getElementById('notify-icon').innerText = "🔔";
+            new Notification("LifeSync Reminders Active", {
+              body: "You will now receive desktop notifications for upcoming student tasks & expenses!",
+            });
+          }
+        });
+      }
+    }
+
+    function checkReminders() {
+      const today = getFormattedDate(0);
+      const tomorrow = getFormattedDate(1);
+
+      const dueItems = items.filter(item => {
+        if (item.reminder === 'same_day' && item.date === today) return true;
+        if (item.reminder === '1_day' && (item.date === today || item.date === tomorrow)) return true;
+        return false;
+      });
+
+      if (dueItems.length > 0) {
+        const toast = document.getElementById('reminder-toast');
+        const desc = document.getElementById('reminder-toast-desc');
+        toast.classList.remove('hidden');
+        desc.innerText = `You have ${dueItems.length} upcoming item(s) requiring attention: ${dueItems.map(i => i.title).join(', ')}`;
+
+        // Trigger native notification if permission granted
+        if (window.Notification && Notification.permission === "granted") {
+          new Notification("LifeSync Reminder Alert", {
+            body: `Due soon: ${dueItems[0].title}`,
+          });
+        }
+      }
+    }
+
+    function dismissReminderToast() {
+      document.getElementById('reminder-toast').classList.add('hidden');
+    }
+
+    // DARK MODE TOGGLE
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('lifesync_theme', isDark ? 'dark' : 'light');
+    }
+  </script>
+
+  <!-- ACCOUNT / LOGIN LOGIC (Netlify Identity) -->
+  <script type="module">
+    import {
+      getUser, login, signup, logout, handleAuthCallback, requestPasswordRecovery,
+      updateUser, refreshSession, onAuthChange, AUTH_EVENTS, AuthError, MissingIdentityError
+    } from 'https://esm.sh/@netlify/identity@2.0.0';
+
+    const $ = (id) => document.getElementById(id);
+    let authMode = 'login'; // 'login' | 'signup' | 'forgot' | 'reset'
+    let currentUserId = null;
+
+    // Show the dashboard for a signed-in user and load their saved items
+    function enterApp(user) {
+      if (currentUserId === user.id) return;
+      currentUserId = user.id;
+      const name = user.name || user.email;
+      $('user-label').textContent = name;
+      $('user-label').title = user.email;
+      $('user-avatar').textContent = (name || '?').trim().charAt(0).toUpperCase();
+
+      const savedCurr = user.userMetadata && user.userMetadata.currency;
+      if (savedCurr === 'KRW' || savedCurr === 'USD') {
+        currentCurrency = savedCurr;
+        localStorage.setItem('lifesync_currency', savedCurr);
+        updateCurrencyUI();
+      }
+
+      $('auth-loading').classList.add('hidden');
+      $('auth-screen').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      loadUserItems();
+    }
+
+    // Show the login screen (optionally with a message)
+    function showAuth(mode = 'login', message, tone) {
+      currentUserId = null;
+      clearUserItems();
+      $('auth-loading').classList.add('hidden');
+      $('app').classList.add('hidden');
+      $('auth-screen').classList.remove('hidden');
+      setMode(mode);
+      if (message) showMessage(message, tone);
+    }
+
+    function setMode(mode) {
+      authMode = mode;
+      const isTabMode = mode === 'login' || mode === 'signup';
+      $('auth-tabs').classList.toggle('hidden', !isTabMode);
+      document.querySelectorAll('.auth-tab').forEach(btn => {
+        const active = btn.dataset.mode === mode;
+        btn.className = 'auth-tab flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition ' +
+          (active ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200');
+      });
+      $('auth-heading').classList.toggle('hidden', isTabMode);
+      $('auth-heading').textContent = mode === 'forgot' ? 'Reset your password' : mode === 'reset' ? 'Choose a new password' : '';
+      $('auth-name-field').classList.toggle('hidden', mode !== 'signup');
+      $('auth-email-field').classList.toggle('hidden', mode === 'reset');
+      $('auth-password-field').classList.toggle('hidden', mode === 'forgot');
+      $('auth-forgot-link').classList.toggle('hidden', mode !== 'login');
+      $('auth-back-link').classList.toggle('hidden', mode !== 'forgot');
+      $('auth-password-label').textContent = mode === 'reset' ? 'New password' : 'Password';
+      $('auth-password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+      $('auth-password').placeholder = mode === 'login' ? '••••••••' : 'At least 6 characters';
+      $('auth-submit').textContent = { login: 'Log in', signup: 'Create account', forgot: 'Send reset link', reset: 'Save new password' }[mode];
+      hideMessage();
+    }
+
+    function showMessage(text, tone = 'error') {
+      const el = $('auth-message');
+      el.textContent = text;
+      el.className = 'text-sm rounded-xl px-3.5 py-2.5 ' + (tone === 'success'
+        ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+        : 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800');
+    }
+    function hideMessage() { $('auth-message').className = 'hidden'; }
+
+    function describeError(error) {
+      if (error instanceof MissingIdentityError) return 'Accounts are not available right now. Please try again later.';
+      if (error instanceof AuthError) {
+        const msg = (error.message || '').toLowerCase();
+        if (msg.includes('not confirmed')) return 'Please confirm your email first. Check your inbox for the confirmation link.';
+        if (msg.includes('already registered') || msg.includes('already exists')) return 'An account with this email already exists. Try logging in.';
+        if (error.status === 401 || error.status === 400 && msg.includes('invalid')) return 'Invalid email or password.';
+        if (error.status === 403) return 'Sign ups are currently closed.';
+        if (error.status === 422) return error.message || 'Check your email and password.';
+        return error.message || 'Something went wrong. Please try again.';
+      }
+      return 'Something went wrong. Please check your connection and try again.';
+    }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const email = $('auth-email').value.trim();
+      const password = $('auth-password').value;
+      const name = $('auth-name').value.trim();
+
+      if (authMode !== 'reset' && !/^\S+@\S+\.\S+$/.test(email)) return showMessage('Enter a valid email address.');
+      if (authMode !== 'forgot' && password.length < 6) return showMessage('Password must be at least 6 characters.');
+
+      const btn = $('auth-submit');
+      btn.disabled = true;
+      try {
+        if (authMode === 'login') {
+          enterApp(await login(email, password));
+        } else if (authMode === 'signup') {
+          const user = await signup(email, password, name ? { full_name: name } : {});
+          if (user.confirmedAt) {
+            enterApp(user);
+          } else {
+            setMode('login');
+            showMessage(`Account created! We sent a confirmation link to ${email}. Click it, then you'll be logged in.`, 'success');
+          }
+        } else if (authMode === 'forgot') {
+          await requestPasswordRecovery(email);
+          setMode('login');
+          showMessage('If that email has an account, a password reset link is on its way.', 'success');
+        } else if (authMode === 'reset') {
+          enterApp(await updateUser({ password }));
+        }
+        $('auth-password').value = '';
+      } catch (error) {
+        showMessage(describeError(error));
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Wire up the login screen and the header log out button
+    $('auth-form').addEventListener('submit', handleSubmit);
+    document.querySelectorAll('.auth-tab').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+    $('auth-forgot-link').addEventListener('click', () => setMode('forgot'));
+    $('auth-back-link').addEventListener('click', () => setMode('login'));
+    $('btn-logout').addEventListener('click', async () => {
+      try { await logout(); } catch (e) { /* session is cleared locally either way */ }
+      showAuth('login', 'You have been logged out. Your data is saved to your account.', 'success');
+    });
+
+    // Keep tabs in sync (logging in or out in another tab)
+    onAuthChange((event, user) => {
+      if (event === AUTH_EVENTS.LOGOUT && currentUserId) showAuth('login');
+      if (event === AUTH_EVENTS.LOGIN && user && authMode !== 'reset') enterApp(user);
+    });
+
+    // Hooks used by the main app script
+    window.LifeSyncAuth = {
+      refresh: () => refreshSession(),
+      sessionExpired: () => showAuth('login', 'Your session expired. Please log in again.'),
+      saveCurrency: (currency) => { if (currentUserId) updateUser({ data: { currency } }).catch(() => {}); }
+    };
+
+    // Boot: handle email confirmation / password reset links, then restore any existing session
+    (async () => {
+      try {
+        const result = await handleAuthCallback();
+        if (result && result.type === 'recovery') return showAuth('reset', 'Enter a new password for your account.', 'success');
+        if (result && result.user) return enterApp(result.user);
+      } catch (error) {
+        showAuth('login', describeError(error));
+        return;
+      }
+      const user = await getUser();
+      if (user) enterApp(user); else showAuth('login');
+    })();
+  </script>
+</body>
+</html>
